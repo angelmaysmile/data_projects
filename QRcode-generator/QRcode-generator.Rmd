@@ -1,0 +1,223 @@
+---
+title: "QRcode Generator"
+author: "@anchu"
+runtime: shiny
+output:
+    html_document:
+        theme: united
+---
+
+```{r setup, include=FALSE}
+
+## global setup
+knitr::opts_chunk$set(echo = FALSE, comment = "", warning = FALSE, message = FALSE)
+Sys.setlocale(category = "LC_ALL", "en_US.UTF-8")
+options(shiny.sanitize.errors = FALSE)
+sys_user <- Sys.info()["user"]
+
+## load packages
+pkgs <- c("qrencoder", "shiny")
+sapply(pkgs, require, character.only = TRUE)
+
+```
+
+```{r prepare-data, include=FALSE}
+
+upcase_letters <- LETTERS
+
+locase_letters <- letters
+
+digits <- 0:9
+
+minus <- "-"
+
+underscore <- "_"
+
+space <- " "
+
+special_char <- c("!", "@", "#", "$", "%", "^", "&", "*", "?", "/", "|", ",",
+                  ".", ";", ":", "+")
+
+brackets <- c("{", "}", "[", "]", "(", ")", "<", ">")
+
+char_set <- list(upcase_letters, locase_letters, digits, minus, underscore,
+                 space, special_char, brackets)
+
+```
+
+```{r server-processing, include=FALSE, eval=FALSE}
+
+re_qrcode <- eventReactive(input$gen_ip, {
+
+    ## check NULL selection
+    shiny::validate(
+               need(any(c(input$upcase_ip, input$locase_ip, input$digit_ip,
+                          input$minus_ip, input$underline_ip, input$space_ip,
+                          input$special_ip, input$brackets_ip)),
+                    "At least one set of character must be selected.")
+           )
+
+    chars <- char_set[c(input$upcase_ip, input$locase_ip, input$digit_ip,
+                        input$minus_ip, input$underline_ip, input$space_ip,
+                        input$special_ip, input$brackets_ip)]
+    chars <- unlist(chars)
+
+    shiny::validate(
+               need(!is.null(input$quant_ip),
+                    "Please specify a positive number of QRcode to be generated.")
+           )
+
+    ##
+    r <- replicate(n = input$quant_ip * 10,
+                   rep_sample(x = v, size = input$length_ip, replace = TRUE))
+    while (anyDuplicated(r)) {
+        r <- replicate(n = input$quant_ip * 10,
+                       rep_sample(x = v, size = input$length_ip, replace = TRUE))
+    }
+
+    ##
+    r <- as.data.frame.matrix(r, stringsAsFactors = FALSE)
+    r[] <- lapply(r, paste0, collapse = "")
+    r <- r[1, ]
+    r <- t(r)
+    rownames(r) <- NULL
+    colnames(r) <- "qrcode_id"
+
+    stopifnot(!anyDuplicated(r))
+})
+
+```
+
+
+## {.tabset}
+
+### Settings ###
+
+
+```{r settings}
+
+tags$strong("HERE YOU CAN DEFINE PROPERTIES OF QRCODE STRING:")
+
+tags$br()
+tags$br()
+
+fluidRow(
+    column(
+        width = 12,
+        numericInput(
+            inputId = "length_ip",
+            label = "1. Length in character of QRcode string (min:5 - max:20):",
+            value = 8L,
+            min = 5L,
+            max = 20L
+        )
+    )
+)
+
+tags$br()
+
+tags$strong("2. Generate using character set:")
+
+fluidRow(
+    column(
+        width = 6,
+        checkboxInput(
+            inputId = "upcase_ip",
+            label = "Upper-case (A, B, C,...)",
+            value = TRUE
+        ),
+        checkboxInput(
+            inputId = "locase_ip",
+            label = "Lower-case (a, b, c,...)",
+            value = TRUE
+        ),
+        checkboxInput(
+            inputId = "digit_ip",
+            label = "Digits (0, 1, 2,...)",
+            value = TRUE
+        ),
+        checkboxInput(
+            inputId = "minus_ip",
+            label = "Minus (-)",
+            value = FALSE
+        )
+    ),
+    column(
+        width = 6,
+        checkboxInput(
+            inputId = "underline_ip",
+            label = "Underline (_)",
+            value = FALSE
+        ),
+        checkboxInput(
+            inputId = "space_ip",
+            label = "Space ( )",
+            value = FALSE
+        ),
+        checkboxInput(
+            inputId = "special_ip",
+            label = "Special character (!, $, %,...)",
+            value = FALSE
+        ),
+        checkboxInput(
+            inputId = "brackets_ip",
+            label = "Brackets ([, ], {, },...)",
+            value = FALSE
+        )
+    )
+)
+
+tags$br()
+
+fluidRow(
+    column(
+        width = 6,
+        numericInput(
+            inputId = "quant_ip",
+            label = "3. Quantity of QRcode strings (1x10):",
+            value = 1L,
+            min = 1L,
+            max = 100L
+        )
+    )
+)
+
+fluidRow(
+    column(
+        width = 6,
+        tags$br(),
+        actionButton(inputId = "gen_ip", label = "Generate")
+    )
+)
+
+
+```
+
+### Preview ###
+
+```{r preview}
+
+tags$strong("HERE YOU SEE A FEW SAMPLE QRCODE STRINGS MATCHING THE RULES SPECIFIED ON THE SETTINGS:")
+
+tags$br()
+tags$br()
+
+fluidRow(
+    column(
+        width = 12,
+        tableOutput("sample_qrcode_tbl")
+    )
+)
+
+```
+
+### Export ###
+
+```{r export}
+
+tags$strong("HERE YOU VIEW A SAMPLE OF PDF FILE OF GENERATED QRCODE:")
+
+tags$br()
+tags$br()
+
+```

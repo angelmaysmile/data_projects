@@ -1,0 +1,13 @@
+
+
+Note: This project turned into R package [[%5B%5Bhttps://github.com/chuvanan/idmcapi%5D%5D][idmcapi]]
+
+** Data
+
+- Internally displaced persons (IDPs) data set.
+
+** References
+
+- http://www.internal-displacement.org/
+- https://data.humdata.org/
+- https://github.com/idmc-labs/IDMC-Platform-API
